@@ -1,0 +1,108 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My API - Documentation</title>
+<style>body{margin:0;background:#0d1117;color:#e6edf3;font-family:ui-monospace,Consolas,monospace}
+header{padding:24px;border-bottom:1px solid #30363d;background:#161b22}h1{margin:0;font-size:22px;color:#58a6ff}
+main{max-width:960px;margin:auto;padding:24px}pre{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.6;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px}
+button{background:#238636;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer;margin-top:10px}</style></head>
+<body><header><h1>My API — Documentation v1.0</h1><button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText)">Copy all</button></header>
+<main><pre>=====================================================
+              MY API - DOCUMENTATION  (v1.0)
+=====================================================
+
+ORIGINAL SITE KAISE KAAM KARTI HAI (repo se samjha)
+-----------------------------------------------------
+1) LOGIN  : Website par login Google Sign-in (Firebase Auth) se hota hai.
+            Login ke baad Profile -&gt; API settings me ek private key milti hai
+            jo &quot;tg_&quot; se start hoti hai.
+2) VERIFY : Har API request par key check hoti hai:
+            key ka SHA-256 hash  -&gt;  Firebase &quot;apiKeys/&lt;hash&gt;&quot;  -&gt; user uid
+            user banned/inactive ho to 403.
+3) BUY    : Wallet se paisa kat-ta hai -&gt; provider (xyzcheats reseller API)
+            se license key aati hai -&gt; order save hota hai. Fail hone par
+            wallet refund ho jata hai.
+
+Yeh &quot;My API&quot; usi main API par same tarah request bhejti hai aur JSON me
+jawab deti hai.
+
+BASE URL
+-----------------------------------------------------
+https://YOUR-DOMAIN/api
+
+AUTHENTICATION
+-----------------------------------------------------
+Apni tg_ key in me se kisi ek tarah bhejo:
+  Header:  x-api-key: tg_xxxxxxxx
+  Header:  Authorization: Bearer tg_xxxxxxxx
+  Body  :  &quot;api_key&quot;: &quot;tg_xxxxxxxx&quot;   (sirf POST)
+
+-----------------------------------------------------
+1. BALANCE         GET /api?action=balance
+-----------------------------------------------------
+curl -H &quot;x-api-key: tg_xxx&quot; &quot;https://YOUR-DOMAIN/api?action=balance&quot;
+
+Response:
+{ &quot;success&quot;: true, &quot;balance&quot;: 500, &quot;currency&quot;: &quot;INR&quot; }
+
+-----------------------------------------------------
+2. ALL PRODUCTS    GET /api?action=products
+-----------------------------------------------------
+curl -H &quot;x-api-key: tg_xxx&quot; &quot;https://YOUR-DOMAIN/api?action=products&quot;
+
+Response:
+{ &quot;success&quot;: true, &quot;account_type&quot;: &quot;user&quot;, &quot;count&quot;: 2,
+  &quot;products&quot;: [ { &quot;pid&quot;: &quot;133&quot;, &quot;purchase_pid&quot;: &quot;133&quot;, &quot;name&quot;: &quot;...&quot;,
+                  &quot;durations&quot;: [ { &quot;duration&quot;: &quot;1 Day&quot;, &quot;price&quot;: 99 } ],
+                  &quot;get_file_link&quot;: &quot;...&quot;, &quot;feedback_link&quot;: &quot;...&quot; } ] }
+
+-----------------------------------------------------
+3. ONE PRODUCT     GET /api?action=product&amp;pid=133
+-----------------------------------------------------
+curl -H &quot;x-api-key: tg_xxx&quot; &quot;https://YOUR-DOMAIN/api?action=product&amp;pid=133&quot;
+
+Response:
+{ &quot;success&quot;: true, &quot;account_type&quot;: &quot;user&quot;, &quot;product&quot;: { ... } }
+
+-----------------------------------------------------
+4. BUY KEY         POST /api?action=buy
+-----------------------------------------------------
+Body (JSON):
+  product_id   (required)  product PID
+  duration     (required)  jaise &quot;1 Day&quot;, &quot;7 Days&quot;
+  android_id   (optional)  Bala device-bound products ke liye required
+
+curl -X POST &quot;https://YOUR-DOMAIN/api?action=buy&quot; \
+  -H &quot;x-api-key: tg_xxx&quot; -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;product_id&quot;:&quot;133&quot;,&quot;duration&quot;:&quot;1 Day&quot;}&#x27;
+
+Response (201):
+{ &quot;success&quot;: true, &quot;message&quot;: &quot;Order placed successfully.&quot;,
+  &quot;order&quot;: { &quot;id&quot;: &quot;lk_api_...&quot;, &quot;product&quot;: &quot;...&quot;, &quot;duration&quot;: &quot;1 Day&quot;,
+             &quot;price&quot;: 99, &quot;key&quot;: &quot;XXXX-XXXX&quot;, &quot;status&quot;: &quot;active&quot;,
+             &quot;get_file_link&quot;: &quot;...&quot;, &quot;feedback_link&quot;: &quot;...&quot;,
+             &quot;created_at&quot;: 1760000000000 } }
+
+-----------------------------------------------------
+ERROR FORMAT (hamesha JSON)
+-----------------------------------------------------
+{ &quot;success&quot;: false, &quot;error&quot;: { &quot;code&quot;: &quot;CODE&quot;, &quot;message&quot;: &quot;...&quot; } }
+
+ 401  API_KEY_MISSING / invalid key
+ 403  account banned
+ 400  REQUIRED_FIELDS_MISSING, DURATION_NOT_FOUND, ANDROID_ID_REQUIRED,
+      UNKNOWN_ACTION, PRICE_NOT_AVAILABLE
+ 402  INSUFFICIENT_BALANCE
+ 404  PRODUCT_NOT_FOUND
+ 405  METHOD_NOT_ALLOWED
+ 502  PROVIDER_PURCHASE_FAILED (wallet refund ho jata hai)
+ 504  UPSTREAM_UNREACHABLE
+
+-----------------------------------------------------
+SETUP / HOSTING
+-----------------------------------------------------
+Environment variable:
+  UPSTREAM_URL = https://&lt;main-site&gt;/api/public-api
+
+Vercel : folder upload karo, UPSTREAM_URL set karo, deploy.
+VPS    : UPSTREAM_URL=... node server.js   (port 3000)
+Docs   : /docs.html  ya  /docs.txt
+</pre></main></body></html>
